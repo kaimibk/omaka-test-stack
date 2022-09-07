@@ -1,8 +1,8 @@
 Getting started:
 
 Starting stack (either make or docker-compose):   
-1. Using make: `make build-up`
-2. Using docker compose: `docker-compose up --build`
+1. Using make: `make build-up` or `make up`
+2. Using docker compose: `docker compose up --build`
 
 Connect to UIs:
 1. JupyterLab: localhost:8888
