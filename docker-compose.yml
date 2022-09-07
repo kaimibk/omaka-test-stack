@@ -1,0 +1,58 @@
+version: "3.7"
+services:
+    notebook-server:
+        build: 
+            context: .
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        volumes: 
+            - ./data:/app/data
+            - ./notebooks:/app/notebooks
+            - ./logs:/app/logs
+            - ./requirements:/app/requirements
+            - ./scripts:/app/scripts
+        ports:
+            - "${JUPYTERPORT}:${JUPYTERPORT}"
+        networks:
+            omaka-server: null
+
+    ray-head:
+        image: rayproject/ray:latest-py310
+        env_file:
+            - .env
+        ports:
+            - "${REDISPORT}:${REDISPORT}"
+            - "${DASHBOARDPORT}:${DASHBOARDPORT}"
+            - "${HEADNODEPORT}:${HEADNODEPORT}"
+        command: bash -c "ray start --head --dashboard-port=${DASHBOARDPORT} --port=${REDISPORT} --dashboard-host=0.0.0.0 --redis-password=${REDISPASSWORD} --block"
+        shm_size: 2g
+        deploy:
+            resources:
+                limits:
+                    cpus: "1"
+                    memory: "2g"
+        networks:
+            omaka-server: null
+                    
+    ray-worker:
+        image: rayproject/ray:latest-py310
+        depends_on:
+            - ray-head
+        env_file:
+            - .env
+        command: bash -c "ray start --address=ray-head:${REDISPORT} --redis-password=${REDISPASSWORD} --num-cpus=${NUM_CPU_WORKER} --block"
+        shm_size: 2g
+        deploy:
+            mode: replicated
+            replicas: ${NUM_WORKERS}
+            resources:
+                limits:
+                    cpus: ${NUM_CPU_WORKER}
+                    memory: "2g"
+        networks:
+            omaka-server: null
+
+networks:
+    omaka-server:
+        name: omaka-server
