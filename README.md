@@ -8,6 +8,8 @@ Connect to UIs:
 1. JupyterLab: localhost:8888
     - password (defined in .env): password
 2. Ray Cluster Dashboard: localhost:8265
+3. Prometheus: localhost:9090
+4. Grafana: localhost:3000
 
 Resources:
 - https://github.com/MarvinSt/ray-docker-compose

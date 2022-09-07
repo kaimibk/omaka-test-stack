@@ -25,7 +25,7 @@ services:
             - "${REDISPORT}:${REDISPORT}"
             - "${DASHBOARDPORT}:${DASHBOARDPORT}"
             - "${HEADNODEPORT}:${HEADNODEPORT}"
-        command: bash -c "ray start --head --dashboard-port=${DASHBOARDPORT} --port=${REDISPORT} --dashboard-host=0.0.0.0 --redis-password=${REDISPASSWORD} --block"
+        command: bash -c "ray start --head --dashboard-port=${DASHBOARDPORT} --port=${REDISPORT} --dashboard-host=0.0.0.0 --redis-password=${REDISPASSWORD} --metrics-export-port=${METRICSPORT} --block"
         shm_size: 2g
         deploy:
             resources:
@@ -50,6 +50,36 @@ services:
                 limits:
                     cpus: ${NUM_CPU_WORKER}
                     memory: "2g"
+        networks:
+            omaka-server: null
+
+    prometheus:
+        image: prom/prometheus:latest
+        depends_on:
+            - 'ray-head'
+        volumes:
+            - ./prometheus/config.yml:/etc/prometheus/prometheus.yml
+        ports:
+            - "${PROMETHEUSPORT}:${PROMETHEUSPORT}"
+        networks:
+            omaka-server: null
+
+    grafana:
+        image: grafana/grafana:latest
+        depends_on:
+            - 'prometheus'
+        links:
+            - prometheus:promtheus
+            - ray-head:ray-head
+        environment:
+            - GF_AUTH_DISABLE_LOGIN_FORM=true
+            - GF_AUTH_ANONYMOUS_ENABLED=true
+            - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+        ports:
+            - "${GRAFANAPORT}:${GRAFANAPORT}"
+        volumes:
+            - ./grafana/grafana_data:/var/lib/grafana
+        user: "1000"
         networks:
             omaka-server: null
 
