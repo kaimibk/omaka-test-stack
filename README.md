@@ -10,6 +10,7 @@ Connect to UIs:
 2. Ray Cluster Dashboard: localhost:8265
 3. Prometheus: localhost:9090
 4. Grafana: localhost:3000
+5. MLFlow UI: localhost:5000
 
 Resources:
 - https://github.com/MarvinSt/ray-docker-compose
