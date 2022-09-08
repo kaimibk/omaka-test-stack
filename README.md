@@ -13,6 +13,10 @@ Connect to UIs:
 5. MLFlow UI: localhost:5000
 
 Resources:
+- https://github.com/datarevenue-berlin/OpenMLOps
 - https://github.com/MarvinSt/ray-docker-compose
 - https://github.com/flavienbwk/prefect-docker-compose
 - https://github.com/Toumash/mlflow-docker
+- https://github.com/sachua/mlflow-docker-compose
+- https://github.com/renaxtdb/mlflow-prefect-jupyter-docker-compose
+= https://github.com/ray-project/mlflow-ray-serve
