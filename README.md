@@ -13,4 +13,5 @@ Connect to UIs:
 
 Resources:
 - https://github.com/MarvinSt/ray-docker-compose
-- https://github.com/flavienbwk/prefect-docker-compose/tree/main/server
+- https://github.com/flavienbwk/prefect-docker-compose
+- https://github.com/Toumash/mlflow-docker

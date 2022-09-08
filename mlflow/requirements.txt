@@ -1,0 +1,6 @@
+cryptography
+boto3
+pymysql
+protobuf
+psycopg2-binary
+mlflow

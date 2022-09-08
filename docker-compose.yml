@@ -82,6 +82,111 @@ services:
         user: "1000"
         networks:
             omaka-server: null
+    
+    postgres:
+        image: postgres
+        volumes:
+            - ./postgres/data:/var/lib/postgresql/data
+            - type: bind
+              source:  ./postgres/init1.sql
+              target: /docker-entrypoint-initdb.d/init1.sql
+              read_only: true
+            - type: bind
+              source:  ./postgres/init2.sql
+              target: /docker-entrypoint-initdb.d/init2.sql
+              read_only: true
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            - TZ="US/Hawaii"
+        ports:
+            - ${POSTGRESPORT}:${POSTGRESPORT}
+        command:
+            - "postgres"
+            - "-c"
+            - "max_connections=150"
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+            interval: 20s
+            timeout: 5s
+            retries: 10
+        logging:
+            driver: json-file
+            options:
+                max-file: '1'
+                max-size: 3m
+        restart: always
+        networks:
+            omaka-server: null       
+
+    minio:
+        image: minio/minio
+        ports:
+            - "${MINIOPORT}:${MINIOPORT}"
+        restart: always
+        volumes:
+            - ./minio/data:/data
+        environment:
+            - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+            - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+        command: server /data
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:${MINIOPORT}/minio/health/live"]
+            interval: 30s
+            timeout: 20s
+            retries: 3
+        logging:
+            driver: json-file
+            options:
+                max-file: '1'
+                max-size: 3m
+        networks:
+            omaka-server: null
+
+    mc:
+        image: minio/mc
+        depends_on:
+            - minio
+        env_file:
+            - .env
+        entrypoint: >
+            /bin/sh -c "
+            until (/usr/bin/mc config host add myminio ${MINIO_URL} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}) do echo 'try to create buckets...' && sleep 1; done;
+            /usr/bin/mc mb myminio/default;
+            /usr/bin/mc policy download myminio/default;
+            until (/usr/bin/mc config host add myminio ${MINIO_URL} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}) do echo 'try to create buckets...' && sleep 1; done;
+            /usr/bin/mc mb myminio/prefect;
+            /usr/bin/mc policy download myminio/prefect;
+            exit 0;
+            "
+        logging:
+            driver: json-file
+            options:
+                max-file: '1'
+                max-size: 3m
+        networks:
+            omaka-server: null
+    
+    mlflow-server:
+        build:
+            context: ./mlflow
+            dockerfile: Dockerfile
+        volumes:
+            - ./mlflow/data:/home/work
+        depends_on:
+            - mc
+            - postgres
+        ports:
+            - "${MLFLOWPORT}:${MLFLOWPORT}"
+        environment:
+            - MLFLOW_S3_ENDPOINT_URL=${MINIO_URL}
+            - AWS_ACCESS_KEY_ID=${MINIO_ACCESS_KEY}
+            - AWS_SECRET_ACCESS_KEY=${MINIO_SECRET_KEY}
+        # command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} --default-artifact-root s3://mlflow/ --host 0.0.0.0
+        command: bash -c "mlflow server --backend-store-uri ${DB_URL} --default-artifact-root ${ARTIFACT_PATH} --host 0.0.0.0 --port ${MLFLOWPORT}"
+        restart: always
+        networks:
+            omaka-server: null
 
 networks:
     omaka-server:

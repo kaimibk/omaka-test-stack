@@ -19,3 +19,6 @@ down:
 
 show-logs:
 	docker compose logs
+
+pull:
+	docker compose pull
